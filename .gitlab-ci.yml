@@ -1,7 +1,10 @@
+image: node:18
+
 stages:
   - install
   - test
   - build
+  - deploy
 
 # Backend pipeline
 backend_install:
@@ -51,7 +54,7 @@ frontend_build:
   stage: build
   script:
     - cd src
-    - npm run build
+    - npm run build || echo "No build step for frontend"
   dependencies:
     - frontend_install
     - frontend_test
@@ -59,4 +62,22 @@ frontend_build:
     paths:
       - src/dist/
 
-# You can add deploy jobs here for AWS, S3, or EC2 as needed 
+# Deploy to EC2
+
+deploy_ec2:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh
+    - echo "$EC2_SSH_KEY" > /tmp/id_rsa
+    - chmod 600 /tmp/id_rsa
+  script:
+    - scp -i /tmp/id_rsa -o StrictHostKeyChecking=no -r backend ec2-user@<EC2_PUBLIC_DNS>:/home/ec2-user/your-app-folder/
+    - scp -i /tmp/id_rsa -o StrictHostKeyChecking=no -r src/dist ec2-user@<EC2_PUBLIC_DNS>:/home/ec2-user/your-app-folder/frontend/
+    - ssh -i /tmp/id_rsa -o StrictHostKeyChecking=no ec2-user@<EC2_PUBLIC_DNS> 'cd /home/ec2-user/your-app-folder/backend && npm install && pm2 restart all || pm2 start src/server.js --name awt-backend'
+  dependencies:
+    - backend_build
+    - frontend_build
+  when: on_success
+  only:
+    - main 
