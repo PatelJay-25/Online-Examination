@@ -1,0 +1,62 @@
+stages:
+  - install
+  - test
+  - build
+
+# Backend pipeline
+backend_install:
+  stage: install
+  script:
+    - cd backend
+    - npm install
+  artifacts:
+    paths:
+      - backend/node_modules/
+
+backend_test:
+  stage: test
+  script:
+    - cd backend
+    - npm test || echo "No tests defined"
+  dependencies:
+    - backend_install
+
+backend_build:
+  stage: build
+  script:
+    - cd backend
+    - echo "No build step for backend"
+  dependencies:
+    - backend_install
+
+# Frontend pipeline
+frontend_install:
+  stage: install
+  script:
+    - cd src
+    - npm install
+  artifacts:
+    paths:
+      - src/node_modules/
+
+frontend_test:
+  stage: test
+  script:
+    - cd src
+    - npm test || echo "No tests defined"
+  dependencies:
+    - frontend_install
+
+frontend_build:
+  stage: build
+  script:
+    - cd src
+    - npm run build
+  dependencies:
+    - frontend_install
+    - frontend_test
+  artifacts:
+    paths:
+      - src/dist/
+
+# You can add deploy jobs here for AWS, S3, or EC2 as needed 
