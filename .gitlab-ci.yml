@@ -32,20 +32,18 @@ backend_build:
   dependencies:
     - backend_install
 
-# Frontend pipeline
+# Frontend pipeline (project root, Vite)
 frontend_install:
   stage: install
   script:
-    - cd src
     - npm install
   artifacts:
     paths:
-      - src/node_modules/
+      - node_modules/
 
 frontend_test:
   stage: test
   script:
-    - cd src
     - npm test || echo "No tests defined"
   dependencies:
     - frontend_install
@@ -53,14 +51,13 @@ frontend_test:
 frontend_build:
   stage: build
   script:
-    - cd src
     - npm run build || echo "No build step for frontend"
   dependencies:
     - frontend_install
     - frontend_test
   artifacts:
     paths:
-      - src/build/
+      - dist/
 
 # Deploy to EC2
 
@@ -73,7 +70,7 @@ deploy_ec2:
     - chmod 600 /tmp/id_rsa
   script:
     - scp -i /tmp/id_rsa -o StrictHostKeyChecking=no -r backend ec2-user@54.89.241.121:/home/ec2-user/your-app-folder/
-    - scp -i /tmp/id_rsa -o StrictHostKeyChecking=no -r src/build ec2-user@54.89.241.121:/home/ec2-user/your-app-folder/frontend/
+    - scp -i /tmp/id_rsa -o StrictHostKeyChecking=no -r dist ec2-user@54.89.241.121:/home/ec2-user/your-app-folder/frontend/
     - ssh -i /tmp/id_rsa -o StrictHostKeyChecking=no ec2-user@54.89.241.121 'cd /home/ec2-user/your-app-folder/backend && npm install && pm2 restart all || pm2 start src/server.js --name awt-backend'
   dependencies:
     - backend_build
