@@ -60,7 +60,7 @@ frontend_build:
     - frontend_test
   artifacts:
     paths:
-      - src/dist/
+      - src/build/
 
 # Deploy to EC2
 
@@ -73,7 +73,7 @@ deploy_ec2:
     - chmod 600 /tmp/id_rsa
   script:
     - scp -i /tmp/id_rsa -o StrictHostKeyChecking=no -r backend ec2-user@54.89.241.121:/home/ec2-user/your-app-folder/
-    - scp -i /tmp/id_rsa -o StrictHostKeyChecking=no -r src/dist ec2-user@54.89.241.121:/home/ec2-user/your-app-folder/frontend/
+    - scp -i /tmp/id_rsa -o StrictHostKeyChecking=no -r src/build ec2-user@54.89.241.121:/home/ec2-user/your-app-folder/frontend/
     - ssh -i /tmp/id_rsa -o StrictHostKeyChecking=no ec2-user@54.89.241.121 'cd /home/ec2-user/your-app-folder/backend && npm install && pm2 restart all || pm2 start src/server.js --name awt-backend'
   dependencies:
     - backend_build
