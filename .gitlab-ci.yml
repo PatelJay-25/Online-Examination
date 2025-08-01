@@ -32,18 +32,20 @@ backend_build:
   dependencies:
     - backend_install
 
-# Frontend pipeline (project root, Vite)
+# Frontend pipeline
 frontend_install:
   stage: install
   script:
+    - cd src
     - npm install
   artifacts:
     paths:
-      - node_modules/
+      - src/node_modules/
 
 frontend_test:
   stage: test
   script:
+    - cd src
     - npm test || echo "No tests defined"
   dependencies:
     - frontend_install
@@ -51,13 +53,14 @@ frontend_test:
 frontend_build:
   stage: build
   script:
+    - cd src
     - npm run build || echo "No build step for frontend"
   dependencies:
     - frontend_install
     - frontend_test
   artifacts:
     paths:
-      - dist/
+      - src/dist/
 
 # Deploy to EC2
 
@@ -69,10 +72,12 @@ deploy_ec2:
     - echo "$EC2_SSH_KEY" > /tmp/id_rsa
     - chmod 600 /tmp/id_rsa
   script:
-    - scp -i /tmp/id_rsa -o StrictHostKeyChecking=no -r backend ec2-user@54.89.241.121:/home/ec2-user/your-app-folder/
-    - scp -i /tmp/id_rsa -o StrictHostKeyChecking=no -r dist ec2-user@54.89.241.121:/home/ec2-user/your-app-folder/frontend/
-    - ssh -i /tmp/id_rsa -o StrictHostKeyChecking=no ec2-user@54.89.241.121 'cd /home/ec2-user/your-app-folder/backend && npm install && pm2 restart all || pm2 start src/server.js --name awt-backend'
+    - scp -i /tmp/id_rsa -o StrictHostKeyChecking=no -r backend ec2-user@<EC2_PUBLIC_DNS>:/home/ec2-user/your-app-folder/
+    - scp -i /tmp/id_rsa -o StrictHostKeyChecking=no -r src/dist ec2-user@<EC2_PUBLIC_DNS>:/home/ec2-user/your-app-folder/frontend/
+    - ssh -i /tmp/id_rsa -o StrictHostKeyChecking=no ec2-user@<EC2_PUBLIC_DNS> 'cd /home/ec2-user/your-app-folder/backend && npm install && pm2 restart all || pm2 start src/server.js --name awt-backend'
   dependencies:
     - backend_build
     - frontend_build
-  when: on_success 
+  when: on_success
+  only:
+    - main 
